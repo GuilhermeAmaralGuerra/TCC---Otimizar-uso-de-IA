@@ -1,0 +1,737 @@
+strategy,task_code,true_complexity,task_criterion,task_prompt,answer,adequate,judge_raw,judge_justification,humano_adequada,observacao_humana
+Sempre pequeno,A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","### Em qual etapa o valor cruza zero (no exemplo)
+Vamos ao cálculo do exemplo que você descreveu: **produto de R$ 40**, na **categoria promocional** (15% de desconto), com **cupom R$ 30** e com **campanha de aniversário** (10%).  
+
+A ordem atual é:
+1) **Aplica 15% de desconto da categoria**  
+2) **Depois R$ 30 do cupom**  
+3) **Depois 10% da campanha**  
+4) **Por último soma o frete**
+
+#### Cálculo (seguindo a ordem atual)
+- Preço inicial do item: **40,00**
+- Após 15% (categoria):  
+  **40,00 - 0,15×40,00 = 40,00 - 6,00 = 34,00**
+- Após cupom R$ 30:  
+  **34,00 - 30,00 = 4,00**
+- Após campanha de aniversário 10% (aplicada sobre o subtotal atual):  
+  **4,00 - 0,10×4,00 = 4,00 - 0,40 = 3,60**
+
+✅ Nesse cenário, o item **não cruza zero**.  
+
+**Mas** a situação que você relatou (“item negativo” e “total do pedido abaixo do frete”) geralmente ocorre quando **o cupom R$ 30 é abatido mesmo quando o subtotal já está muito baixo**, ou quando a campanha de aniversário aplica **sobre o valor antes do cupom** (ou sobre um “base” que não foi rebaixada), ou quando existe **arredondamento** e/ou **regras de rateio por item** que fazem o abatimento efetivo ficar maior do que o permitido.
+
+Ponto crítico mais comum: **a etapa do cupom (R$ 30)**, porque ela é um **desconto fixo** e pode “ultrapassar” o saldo do item (principalmente se o desconto percentual anterior for aplicado em uma base diferente do cupom).
+
+---
+
+### Ordem segura proposta
+Para evitar saldo negativo, a ordem mais segura é:
+
+1) **Aplica todos os descontos percentuais (categoria e aniversário) primeiro**  
+2) **Aplica descontos fixos (cupom) por último**, sempre com trava por item  
+3) **Depois soma o frete** (frete nunca deve ser “descontado” por essas regras de item)
+
+Ou seja, ao invés de:
+- 15% → cupom fixo → 10% → frete  
+Use:
+- **15% → 10% → cupom fixo → frete**
+
+Isso reduz a chance de o cupom fixo exceder o valor restante do item.
+
+---
+
+### Trava para impedir desconto maior que o valor do item
+Implemente uma trava por item (ou por linha do carrinho), garantindo:
+
+**Desconto total do item ≤ Preço inicial do item**
+
+De forma prática:
+- Calcule `preco_inicial_item`
+- Calcule `descontos_percentuais` (categoria + aniversário)
+- Calcule `subtotal_pos_percentuais = preco_inicial_item - descontos_percentuais`
+- Ao aplicar o cupom fixo (alocado ao item), aplique:
+
+**desconto_cupom_efetivo = min(desconto_cupom_pretendido, subtotal_pos_percentuais)**
+
+E por fim:
+- `preco_final_item = preco_inicial_item - descontos_percentuais - desconto_cupom_efetivo`
+- Garanta também: `preco_final_item >= 0`
+
+---
+
+### Recalculando com a ordem segura (15% → 10% → cupom)
+Preço inicial: **40,00**
+
+1) 15% categoria:  
+   **40,00 - 6,00 = 34,00**
+2) 10% aniversário:  
+   **34,00 - 3,40 = 30,60**
+3) Cupom R$ 30 (fixo) com trava:  
+   - subtotal antes do cupom = **30,60**
+   - cupom pretendido = **30,00**
+   - trava: desconto efetivo = min(30,00, 30,60) = **30,00**
+   - preço final do item: **30,60 - 30,00 = 0,60**
+
+4) Soma frete (ex.: frete F):  
+   **total_pedido = 0,60 + F** (nunca fica abaixo do frete por causa do item)
+
+---
+
+### Resumo do que mudar
+1) **Ordem segura:** percentuais primeiro (15% e 10%), **cupom fixo por último**, frete por último.  
+2) **Trava:** ao aplicar cupom fixo, limitar o desconto ao **saldo disponível do item**:
+   - `desconto_cupom_efetivo = min(cupom_alocado_ao_item, subtotal_pos_percentuais)`
+   - `preco_final_item = max(preco_final_item, 0)`
+
+Se você me disser como vocês **definem a base** do 10% (sobre o preço original? sobre subtotal já descontado?) e como o cupom R$ 30 é **rateado entre itens**, eu consigo apontar exatamente em qual etapa/condição específica o negativo ocorre no seu caso.",0,"INADEQUADA
+MOTIVO: O exemplo dado não cruza zero na ordem atual nem identifica exatamente em que etapa isso acontece; a resposta assume possibilidades genéricas, mas não mostra o ponto real de negativação solicitado.","O exemplo dado não cruza zero na ordem atual nem identifica exatamente em que etapa isso acontece; a resposta assume possibilidades genéricas, mas não mostra o ponto real de negativação solicitado.",PARCIALMENTE CORRETA,"O cálculo do enunciado não resulta em valor negativo: R$ 40,00 menos 15% = R$ 34,00; após cupom de R$ 30,00 = R$ 4,00; menos 10% = R$ 3,60. A resposta chega ao resultado correto, reconhece a inconsistência e sugere travas para evitar saldos negativos, mas poderia explicitar melhor o ponto de ruptura do cupom. Reprovação automática excessiva; aprovação com ressalvas."
+Sempre médio,A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","O valor cruza zero na etapa do **cupom de R$ 30**.
+
+### Cálculo do exemplo com a ordem atual
+Preço do item: **R$ 40,00**
+
+1. **Desconto de 15% da categoria**  
+   40,00 - 15% = **R$ 34,00**
+
+2. **Cupom de R$ 30**  
+   34,00 - 30,00 = **R$ 4,00**
+
+3. **Campanha de aniversário de 10%**  
+   4,00 - 10% = **R$ 3,60**
+
+4. **Frete**  
+   Soma do frete ao pedido final.
+
+Nesse exemplo específico, **o item não fica negativo** com esses números, mas fica muito baixo.  
+Se o pedido estiver com um item menor, por exemplo **R$ 30,00**, aí o cruzamento abaixo de zero acontece assim:
+
+- 30,00 - 15% = **25,50**
+- 25,50 - 30,00 = **-4,50**
+- 10% sobre valor negativo mantém o negativo
+- depois o frete soma, mas o item já está abaixo de zero
+
+### Ordem mais segura
+A ordem mais segura é:
+
+1. **Aplicar descontos percentuais por item**
+2. **Aplicar cupom com trava de mínimo zero**
+3. **Aplicar campanha de aniversário com trava de mínimo zero**
+4. **Somar frete por último**
+
+Se quiser ser ainda mais conservador, o ideal é:
+- calcular descontos sobre o valor original ou sobre o subtotal positivo,
+- sempre limitar o preço mínimo do item a **R$ 0,00** antes de passar para a próxima regra.
+
+### Trava recomendada
+Antes de aplicar qualquer desconto monetário ou percentual, faça:
+
+- **novo_valor = max(0, valor_atual - desconto)**
+- para percentual:
+  - **desconto = valor_atual × percentual**
+  - **novo_valor = max(0, valor_atual - desconto)**
+
+Se o desconto for por cupom fixo, também limitar:
+- **cupom_aplicado = min(cupom, valor_atual)**
+
+### Exemplo com trava no cenário problemático
+Se o item for **R$ 30,00**:
+
+1. Categoria 15%:  
+   30,00 - 4,50 = **R$ 25,50**
+
+2. Cupom de R$ 30 com trava:  
+   desconto aplicado = **R$ 25,50**  
+   novo valor = **R$ 0,00**
+
+3. Campanha de 10%:  
+   10% de 0,00 = **R$ 0,00**  
+   permanece **R$ 0,00**
+
+4. Frete:  
+   soma no total do pedido normalmente
+
+### Recomendação prática
+- **Nunca deixar item negativo**
+- **Limitar cada desconto ao saldo atual do item**
+- **Recalcular totais após cada desconto**
+- **Frete sempre fora da lógica de desconto do item**
+
+Se quiser, posso te devolver isso em forma de regra de negócio ou pseudo-código.",0,"INADEQUADA
+MOTIVO: A resposta não identifica corretamente em qual etapa o valor cruza zero no exemplo real, já que com R$ 40 isso não ocorre; além disso, não mostra o cálculo do cenário dado com o valor ficando negativo nem explica exatamente a ordem que gera o problema.","A resposta não identifica corretamente em qual etapa o valor cruza zero no exemplo real, já que com R$ 40 isso não ocorre; além disso, não mostra o cálculo do cenário dado com o valor ficando negativo nem explica exatamente a ordem que gera o problema.",PARCIALMENTE CORRETA,"A resposta inicia afirmando incorretamente que o valor fica negativo com o cupom, porém calcula corretamente R$ 3,60, reconhece a ausência de negativação nesse exemplo e demonstra outra situação em que o cupom excede o subtotal. Há contradição interna, mas a solução atende substancialmente à tarefa. Adequada com ressalvas."
+Sempre grande,A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","O valor cruza zero na etapa do **cupom de R$ 30**.
+
+### Cálculo na ordem atual
+Item: **R$ 40,00**
+
+1. **Desconto da categoria: 15%**
+   - 15% de 40 = **R$ 6,00**
+   - Subtotal: **R$ 34,00**
+
+2. **Cupom: R$ 30,00**
+   - 34 - 30 = **R$ 4,00**
+   - Ainda não ficou negativo
+
+3. **Campanha de aniversário: 10%**
+   - 10% de 4 = **R$ 0,40**
+   - Subtotal: **R$ 3,60**
+
+4. **Soma frete**
+   - Total final = **R$ 3,60 + frete**
+
+### Conclusão do exemplo informado
+**Nesse exemplo exato, o item não cruza zero.**  
+Ele termina em **R$ 3,60** antes do frete.
+
+Se o sistema está deixando o item negativo nesse cenário, há forte indício de um destes problemas:
+- o cupom está sendo aplicado sobre valor diferente da base correta;
+- a campanha está sendo aplicada antes/de forma incorreta;
+- o cupom não está sendo limitado ao saldo restante do item;
+- o desconto está abatendo também frete ou outra linha indevidamente.
+
+---
+
+## Ordem segura recomendada
+Use esta ordem:
+
+1. **Descontos percentuais do item**
+   - categoria
+   - campanha/aniversário
+2. **Descontos fixos**
+   - cupom em valor
+3. **Trava de piso mínimo**
+   - item nunca pode ficar abaixo de **R$ 0,00**
+4. **Somar frete no final**
+   - frete não deve ser reduzido por desconto do item, salvo regra explícita
+
+### Motivo
+- percentuais primeiro preservam consistência da regra promocional;
+- cupom fixo por último facilita limitar o abatimento ao saldo do item;
+- frete fica isolado e não “absorve” desconto indevido.
+
+---
+
+## Trava para impedir desconto maior que o valor do item
+A regra deve ser:
+
+**desconto_aplicado = min(desconto_desejado, saldo_atual_do_item)**
+
+Ou seja:
+- se o item tem saldo de **R$ 4,00**
+- e o cupom quer descontar **R$ 30,00**
+- aplica apenas **R$ 4,00**
+- item fica em **R$ 0,00**, nunca negativo
+
+Também pode aplicar uma trava geral após cada etapa:
+
+**subtotal_item = max(0, subtotal_item)**
+
+---
+
+## Cálculo do exemplo em ordem segura
+Item: **R$ 40,00**
+
+1. **Categoria 15%**
+   - desconto: **R$ 6,00**
+   - subtotal: **R$ 34,00**
+
+2. **Aniversário 10%**
+   - desconto: **R$ 3,40**
+   - subtotal: **R$ 30,60**
+
+3. **Cupom R$ 30,00**
+   - aplica **min(30, 30,60) = 30,00**
+   - subtotal: **R$ 0,60**
+
+4. **Frete**
+   - total final = **R$ 0,60 + frete**
+
+---
+
+## Regra prática para implementação
+Para cada item:
+
+```text
+subtotal = preco_item
+
+subtotal -= percentual_categoria(subtotal)
+subtotal = max(0, subtotal)
+
+subtotal -= percentual_campanha(subtotal)
+subtotal = max(0, subtotal)
+
+desconto_cupom_aplicado = min(valor_cupom, subtotal)
+subtotal -= desconto_cupom_aplicado
+subtotal = max(0, subtotal)
+
+total_pedido = subtotal_itens + frete
+```
+
+Se quiser, posso transformar isso em:
+- regra funcional detalhada,
+- pseudocódigo,
+- ou testes de cenário para validar carrinhos com múltiplos itens.",0,"INADEQUADA
+MOTIVO: A resposta não identifica corretamente em que etapa o valor cruza zero no exemplo dado, porque o cálculo mostrado nunca fica negativo; além disso, propõe uma ordem segura diferente da ordem solicitada sem demonstrar o ponto exato de cruzamento com base no cenário real.","A resposta não identifica corretamente em que etapa o valor cruza zero no exemplo dado, porque o cálculo mostrado nunca fica negativo; além disso, propõe uma ordem segura diferente da ordem solicitada sem demonstrar o ponto exato de cruzamento com base no cenário real.",PARCIALMENTE CORRETA,"O início sugere que o cupom torna o exemplo negativo, o que contradiz a própria conta. Depois a resposta apresenta corretamente R$ 3,60 e propõe limites para o cupom e descontos. Pela inconsistência inicial, há ressalva; não é uma resposta inteiramente inadequada."
+Roteamento,A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","O valor cruza zero na etapa do **cupom de R$ 30**.
+
+### Cálculo na ordem atual
+Item: **R$ 40,00**
+
+1. **Desconto da categoria: 15%**
+   - 15% de 40 = **R$ 6,00**
+   - 40 - 6 = **R$ 34,00**
+
+2. **Cupom: R$ 30,00**
+   - 34 - 30 = **R$ 4,00**
+
+3. **Campanha de aniversário: 10%**
+   - 10% de 4 = **R$ 0,40**
+   - 4 - 0,40 = **R$ 3,60**
+
+4. **Frete**
+   - Total final = **R$ 3,60 + frete**
+
+### Conclusão do exemplo
+Nesse exemplo exato, **o item não fica negativo**.  
+Ele só cruzaria zero no cupom se, após os descontos percentuais anteriores, o saldo do item fosse **menor que R$ 30,00**.
+
+---
+
+## Onde o valor cruza zero
+Regra geral na ordem atual:
+
+- Após categoria:  
+  `subtotal_item = valor_item - desconto_categoria`
+- No cupom:  
+  se `cupom > subtotal_item`, então o item fica negativo **nessa etapa**
+
+No exemplo:
+- subtotal após categoria = **R$ 34,00**
+- cupom = **R$ 30,00**
+- ainda sobra **R$ 4,00**
+
+Então o cruzamento para negativo **não acontece nesse caso específico**.
+
+---
+
+## Ordem segura recomendada
+Para evitar distorções, use esta ordem:
+
+1. **Aplicar descontos percentuais do item**
+   - categoria
+   - campanha/aniversário
+
+2. **Aplicar desconto fixo do cupom por último**
+   - limitado ao saldo restante do item
+
+3. **Aplicar frete no final**
+   - sem permitir que desconto de item abata frete, a menos que essa seja a regra de negócio
+
+### Motivo
+- Percentuais fazem mais sentido sobre o preço do item.
+- O cupom fixo entra por último e pode ser facilmente limitado ao saldo restante.
+- O frete não deve ser “consumido” por desconto de item sem regra explícita.
+
+---
+
+## Trava recomendada
+A trava principal é:
+
+```text
+desconto_aplicado = min(desconto_calculado, saldo_atual_do_item)
+novo_saldo = saldo_atual_do_item - desconto_aplicado
+```
+
+Ou, de forma mais direta:
+
+```text
+saldo_item = max(0, saldo_item - desconto)
+```
+
+### Para cupom fixo
+```text
+cupom_aplicado = min(30, saldo_item)
+saldo_item = saldo_item - cupom_aplicado
+```
+
+Isso impede que o item fique abaixo de zero.
+
+---
+
+## Cálculo do exemplo na ordem segura
+Item: **R$ 40,00**
+
+1. **Categoria 15%**
+   - desconto = 40 × 15% = **R$ 6,00**
+   - saldo = **R$ 34,00**
+
+2. **Aniversário 10%**
+   - desconto = 34 × 10% = **R$ 3,40**
+   - saldo = **R$ 30,60**
+
+3. **Cupom R$ 30,00**
+   - cupom aplicado = min(30, 30,60) = **R$ 30,00**
+   - saldo = **R$ 0,60**
+
+4. **Frete**
+   - total final = **R$ 0,60 + frete**
+
+---
+
+## Regra de proteção recomendada
+- **Nunca permitir item negativo**
+- **Nunca permitir pedido abaixo do frete por desconto aplicado no item**, se o frete não for descontável
+- **Cupom fixo sempre limitado ao saldo elegível**
+
+### Exemplo de pseudológica
+```text
+saldo_item = valor_item
+
+saldo_item -= min(saldo_item, valor_item * 0.15)
+saldo_item -= min(saldo_item, saldo_item * 0.10)
+saldo_item -= min(saldo_item, 30)
+
+total_pedido = saldo_item + frete
+```
+
+Se quiser, posso transformar isso em **regra funcional pronta para especificação** ou em **pseudocódigo para backend**.",0,"INADEQUADA
+MOTIVO: O exemplo dado não mostra o valor cruzando zero nem identifica corretamente a etapa em que o item ficaria negativo; a resposta diz que cruza no cupom, mas no cálculo apresentado o saldo final é positivo.","O exemplo dado não mostra o valor cruzando zero nem identifica corretamente a etapa em que o item ficaria negativo; a resposta diz que cruza no cupom, mas no cálculo apresentado o saldo final é positivo.",PARCIALMENTE CORRETA,"A resposta apresenta afirmação inicial de cruzamento de zero, embora os cálculos mostrem saldo final positivo de R$ 3,60. Em seguida identifica a condição de cupom superior ao subtotal e oferece pseudocódigo de proteção. Conteúdo principal útil, com contradição inicial; adequada com ressalvas."
+"Cascata 0,80",A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","O valor cruza zero na etapa do **cupom de R$ 30**.
+
+### Cálculo do exemplo com a ordem atual
+Produto: **R$ 40,00**
+
+1. **Desconto da categoria 15%**
+   - 15% de 40 = **R$ 6,00**
+   - Subtotal: **R$ 34,00**
+
+2. **Cupom fixo de R$ 30**
+   - 34 - 30 = **R$ 4,00**
+   - Ainda não cruza zero
+
+3. **Campanha de aniversário 10%**
+   - 10% de 4 = **R$ 0,40**
+   - Subtotal: **R$ 3,60**
+
+4. **Frete**
+   - Se o frete for somado no final, ele entra normalmente no total
+
+Nesse exemplo específico, o item **não fica negativo** com esses valores.  
+Para o item ficar negativo, o problema aparece quando os descontos acumulados ultrapassam o valor do item em cenários com preço menor ou combinações maiores de desconto/cupom.
+
+### Onde o cruzamento pode acontecer
+A etapa mais perigosa é o **cupom fixo**, porque ele é um abatimento absoluto.  
+Se o subtotal após o desconto percentual já for menor que R$ 30, o valor fica negativo nessa etapa.
+
+Exemplo de cruzamento:
+- Produto: R$ 25
+- 15% categoria = R$ 3,75 → subtotal R$ 21,25
+- Cupom R$ 30 → subtotal **R$ -8,75**
+
+### Ordem segura recomendada
+Para evitar valores negativos:
+
+1. **Aplicar todos os descontos do item em sequência**
+2. **Ao final, limitar o subtotal do item a no mínimo R$ 0,00**
+3. **Somar o frete somente no total do pedido, fora do bloco de desconto do item**
+
+Se quiser uma regra mais conservadora:
+- aplicar descontos percentuais primeiro
+- depois cupons fixos
+- depois campanhas percentuais
+- sempre com piso zero após cada desconto
+
+### Trava para impedir desconto maior que o valor do item
+Use uma regra de piso em cada etapa:
+
+- **Desconto aplicado = mínimo entre o desconto calculado e o valor disponível**
+- **Subtotal nunca pode ficar menor que zero**
+
+Exemplo de trava:
+- Se o subtotal atual é R$ 21,25
+- e o cupom é R$ 30,00
+- aplicar apenas **R$ 21,25**
+- subtotal final do item = **R$ 0,00**
+
+### Fórmula prática
+Após cada desconto:
+
+`subtotal = max(0, subtotal - desconto)`
+
+Para percentual:
+`desconto = subtotal * percentual`
+
+Para cupom fixo:
+`desconto = min(cupom, subtotal)`
+
+### Resumo
+- O cruzamento com zero ocorre tipicamente no **cupom fixo**.
+- A ordem segura é aplicar descontos e **travar o subtotal em zero** antes de somar o frete.
+- A trava correta é: **nunca permitir desconto maior que o valor restante do item**.",0,"INADEQUADA
+MOTIVO: O exemplo fornecido pelo usuário não foi analisado corretamente para mostrar em que etapa o valor cruza zero; a resposta conclui que não fica negativo nesse caso, sem apontar a ordem exata em que o problema ocorre no cenário pedido.","O exemplo fornecido pelo usuário não foi analisado corretamente para mostrar em que etapa o valor cruza zero; a resposta conclui que não fica negativo nesse caso, sem apontar a ordem exata em que o problema ocorre no cenário pedido.",PARCIALMENTE CORRETA,"O enunciado pressupõe negativação que não ocorre: o resultado é R$ 3,60. A resposta identifica isso, explora um cenário alternativo no qual o cupom pode causar saldo negativo e propõe proteção, embora a explicação da ordem dos descontos possa ser mais precisa. Adequada com ressalvas."
+"Cascata 0,90",A02,high,Encontrar em que ordem os descontos geram valor negativo.,"O preço final está saindo negativo em alguns carrinhos.
+Ordem atual: aplica 15% de desconto da categoria, depois R$ 30 do cupom,
+depois 10% da campanha de aniversário, e por último soma o frete.
+Exemplo real: produto de R$ 40 na categoria promocional, com cupom de R$ 30
+e campanha de aniversário. O cliente pagou frete, mas o item ficou negativo
+e o total do pedido ficou abaixo do frete.
+Diga em qual etapa o valor cruza zero, proponha uma ordem segura
+e uma trava para impedir desconto maior que o valor do item.
+Mostre o cálculo do exemplo.","O valor cruza zero na etapa do **cupom de R$ 30**.
+
+### Cálculo na ordem atual
+Produto: **R$ 40,00**
+
+1. **Desconto da categoria: 15%**
+   - 15% de 40 = **R$ 6,00**
+   - Subtotal: **40 - 6 = R$ 34,00**
+
+2. **Cupom: R$ 30,00**
+   - Subtotal: **34 - 30 = R$ 4,00**
+
+3. **Campanha de aniversário: 10%**
+   - 10% de 4 = **R$ 0,40**
+   - Subtotal: **4 - 0,40 = R$ 3,60**
+
+4. **Frete**
+   - Total final = **R$ 3,60 + frete**
+
+Nesse exemplo exato, o item **não fica negativo**; ele fica em **R$ 3,60** antes do frete.
+
+### Quando cruza zero
+Com essa ordem, o cruzamento acontece se o desconto fixo do cupom for maior que o subtotal após os descontos percentuais anteriores.
+
+Regra:
+- subtotal após categoria = `preco * (1 - 0,15)`
+- depois cupom = `subtotal - 30`
+
+Cruza zero se:
+- `preco * 0,85 < 30`
+- `preco < 35,294117...`
+
+Ou seja, **qualquer item abaixo de R$ 35,30** nessa mesma combinação fica negativo já na etapa do **cupom**.
+
+Exemplo que cruza zero:
+- Produto R$ 30,00
+- Categoria 15%: fica **R$ 25,50**
+- Cupom R$ 30: fica **R$ -4,50**
+- Aqui já cruzou zero
+
+### Ordem segura
+A ordem mais segura é:
+
+1. **Aplicar descontos percentuais do item**
+   - categoria
+   - campanha/aniversário
+2. **Aplicar desconto fixo do cupom**
+3. **Travar piso mínimo do item em R$ 0,00**
+4. **Somar frete no final**
+
+### Motivo
+- Percentuais preservam proporcionalidade sobre o preço do item.
+- Cupom fixo entra por último sobre o valor já reduzido.
+- O frete não deve ser “consumido” por desconto de item, a menos que a regra de negócio permita desconto sobre frete.
+- A trava evita total negativo ou item abaixo de zero.
+
+### Cálculo do exemplo na ordem segura
+Produto: **R$ 40,00**
+
+1. **Categoria 15%**
+   - 40 - 6 = **R$ 34,00**
+
+2. **Aniversário 10%**
+   - 10% de 34 = **R$ 3,40**
+   - 34 - 3,40 = **R$ 30,60**
+
+3. **Cupom R$ 30**
+   - 30,60 - 30 = **R$ 0,60**
+
+4. **Trava de piso**
+   - max(0,60, 0) = **R$ 0,60**
+
+5. **Somar frete**
+   - total = **R$ 0,60 + frete**
+
+### Trava recomendada
+A trava deve limitar o desconto aplicado ao saldo atual do item.
+
+#### Regra simples
+- `desconto_aplicado = min(desconto_calculado, subtotal_item)`
+- `subtotal_item = max(subtotal_item - desconto_aplicado, 0)`
+
+#### Para cupom fixo
+- `cupom_aplicado = min(30, subtotal_item)`
+
+Assim, se o subtotal do item for R$ 18,00:
+- cupom de R$ 30 aplica só **R$ 18,00**
+- item vai para **R$ 0,00**, nunca negativo
+
+### Regra prática de implementação
+```text
+subtotal = preco_item
+
+subtotal -= desconto_categoria_percentual(subtotal)
+subtotal -= desconto_campanha_percentual(subtotal)
+
+cupom_aplicado = min(valor_cupom, subtotal)
+subtotal -= cupom_aplicado
+
+subtotal = max(subtotal, 0)
+
+total_pedido = subtotal + frete
+```
+
+### Recomendação adicional
+Se o cupom for do pedido inteiro e não de um item específico, distribua o valor do cupom entre os itens e aplique a mesma trava por item, para evitar que um único item fique negativo.",0,"INADEQUADA
+MOTIVO: A resposta afirma que o valor cruza zero no cupom, mas no exemplo dado o item não fica negativo; além disso, a solicitação pede o cálculo do exemplo real e a identificação da etapa em que o total cruza zero, o que não foi respondido corretamente para o caso apresentado.","A resposta afirma que o valor cruza zero no cupom, mas no exemplo dado o item não fica negativo; além disso, a solicitação pede o cálculo do exemplo real e a identificação da etapa em que o total cruza zero, o que não foi respondido corretamente para o caso apresentado.",PARCIALMENTE CORRETA,"A resposta calcula R$ 3,60 e deriva o limite em que o cupom faria o subtotal negativo (preço antes de descontos inferior a cerca de R$ 35,29). Apesar disso, há formulação inicial contraditória. Demonstra entendimento relevante, mas merece ressalva."
+Sempre pequeno,A05,high,Explicar uma causa provável da diferença e como confirmar.,"O sistema de vendas mostra R$ 12.480 de receita na terça-feira.
+O financeiro mostra R$ 11.950 no mesmo dia e na mesma filial.
+Vendas considera o horário de criação do pedido. Financeiro considera
+a data da conciliação do pagamento, que pode cair no dia seguinte
+depois das 22h. Pedidos cancelados após a conciliação saem do financeiro
+e continuam no relatório de vendas até uma rotina noturna.
+A rotina da terça falhou. Explique uma causa consistente com esses fatos,
+diga quais pedidos entram na diferença e proponha uma conferência
+que a equipe consiga fazer sem esperar a próxima noite.","Uma causa consistente é **falha na rotina noturna de fechamento/repasse da terça para o financeiro**, que deixou parte dos pedidos “consignados/compensados” no relatório de vendas (porque o horário de criação do pedido já estava contabilizado) **mas não foram conciliados no financeiro na terça** (ou ficaram para conciliar na manhã da quarta). Como o financeiro só considera a **data da conciliação** (e essa conciliação pode cair após 22h do dia seguinte), qualquer atraso/falha nessa rotina na terça mantém a receita visível em vendas, mas **não aparece no financeiro naquele dia**, gerando a diferença (vendas maior que financeiro).
+
+### Quais pedidos entram na diferença
+- **Pedidos criados na terça (terça-feira) que tinham pagamento previsto para conciliar na terça**, mas cuja **conciliação não ocorreu/foi interrompida** pela rotina que falhou.
+- Se houver pedidos cancelados “após a conciliação”: esses **não** deveriam ficar no financeiro, mas **continuariam no relatório de vendas até a rotina noturna**. Então, também podem entrar na diferença **pedidos cancelados depois de já terem sido conciliados**, caso a rotina que remove/ajusta para o financeiro tenha falhado (ficam a mais em vendas para terça).
+
+Em resumo: a diferença tende a ser o conjunto de **pedidos de terça com pagamento que foi/seria conciliado na virada (ou na própria terça), mas que não foi refletido no financeiro por causa do erro**, e/ou **cancelamentos ocorridos depois da conciliação cujo ajuste noturno não rodou**.
+
+### Conferência imediata (sem esperar a próxima noite)
+1. **Escolha uma janela curta de terça** (ex.: pedidos criados entre 00:00–23:59).
+2. Liste no sistema (ou extraia via relatório) todos os **IDs de pedido** que compõem a receita de vendas da terça e compare com os que constam no financeiro como “conciliados” na terça.
+3. Para cada pedido divergente, verifique **pelo menos estes campos**:
+   - data/hora de **criação** do pedido (deve ser terça);
+   - **status** do pedido (cancelado ou não);
+   - **data de conciliação** do pagamento (deve estar ausente na terça ou constar na quarta);
+   - **status/atividade do processo** de conciliação/repasse da rotina noturna (se existir log/job).
+4. Critério prático para confirmar a hipótese:
+   - Se a maioria dos pedidos “a mais” em vendas da terça tem **data de conciliação na quarta** (ou está “não conciliado”/“pendente” na terça), então a causa é **atraso/falha no job de conciliação da terça**.
+   - Se uma parcela relevante estiver **cancelada**, mas com pagamento que chegou a ter conciliação (ou ficou sem ajuste), isso reforça o caso de **cancelados após conciliação + ajuste noturno falhando**.
+
+Se você quiser, me diga quais “rotinas/jobs” existem para conciliação (nomes), e se há log por execução; eu te ajudo a transformar isso em um roteiro de verificação com passos e filtros exatos.",0,"INADEQUADA
+MOTIVO: A resposta sugere a causa como falha de rotina de conciliação, mas não explicita de forma consistente com os fatos que os pedidos “a mais” entram por criação na terça e conciliação no dia seguinte após 22h, nem identifica claramente quais pedidos compõem a diferença; a conferência também fica genérica, sem um método objetivo para isolar a divergência sem esperar a próxima noite.","A resposta sugere a causa como falha de rotina de conciliação, mas não explicita de forma consistente com os fatos que os pedidos “a mais” entram por criação na terça e conciliação no dia seguinte após 22h, nem identifica claramente quais pedidos compõem a diferença; a conferência também fica genérica, sem um método objetivo para isolar a divergência sem esperar a próxima noite.",PARCIALMENTE CORRETA,"A resposta identifica hipóteses plausíveis para a diferença de R$ 530, como data de conciliação e cancelamentos, e recomenda comparar pedidos, status e logs imediatamente. Sem IDs e lançamentos no enunciado, não é possível apontar quais pedidos somam R$ 530; faltou demonstrar uma reconciliação fechada. Adequada com ressalvas."
+"Cascata 0,90",B10,low,Responder de forma educada que a loja está fechada.,"Escreva uma resposta curta e educada.
+Situação: o cliente perguntou se a loja física abre no domingo.
+Dado: a loja física abre apenas de segunda a sábado.",,0,"INADEQUADA
+MOTIVO: Não foi apresentada nenhuma resposta ao cliente; faltou informar de forma curta e educada que a loja está fechada no domingo.",Não foi apresentada nenhuma resposta ao cliente; faltou informar de forma curta e educada que a loja está fechada no domingo.,INCORRETA,O campo de resposta está vazio. Não informa que a loja física não abre aos domingos nem apresenta o horário solicitado. Concordamos com a reprovação; é inadequada.
+Compressão + roteamento,M04,medium,Produzir uma consulta que conta clientes ativos por cidade.,"Escreva uma consulta SQL.
+Tabelas: clientes(id, nome, cidade, ativo) e pedidos(id, cliente_id, valor).
+Objetivo: listar a quantidade de clientes ativos por cidade, apenas cidades
+com mais de 10 clientes ativos, em ordem decrescente da quantidade.
+Não use pedidos nesta consulta.","```sql
+SELECT
+  cidade,
+  COUNT(*) AS quantidade_clientes_ativos
+FROM clientes
+WHERE ativo = 1
+GROUP BY cidade
+HAVING COUNT(*) >= 10
+ORDER BY quantidade_clientes_ativos DESC;
+```",0,"INADEQUADA
+MOTIVO: O critério pede apenas cidades com mais de 10 clientes ativos, mas a consulta usa `HAVING COUNT(*) >= 10`, incluindo cidades com exatamente 10.","O critério pede apenas cidades com mais de 10 clientes ativos, mas a consulta usa `HAVING COUNT(*) >= 10`, incluindo cidades com exatamente 10.",INCORRETA,"A consulta gerada utiliza HAVING COUNT(*) >= 10, que aceita cidades com exatamente dez clientes ativos. O requisito é mais de dez, portanto exige HAVING COUNT(*) > 10. A diferença altera o conjunto retornado; inadequada."
+Sempre pequeno,M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","nome: Ricardo Lima  
+pedido: 7712  
+problema: A nota fiscal saiu com o endereço antigo.  
+urgência: Ainda hoje (caminhão sai às 16h).",0,"INADEQUADA
+MOTIVO: A solicitação pedia os campos nome, pedido, problema e urgência, mas a resposta não usa null para campos ausentes e ainda deixa de seguir exatamente o formato solicitado para extração de campos.","A solicitação pedia os campos nome, pedido, problema e urgência, mas a resposta não usa null para campos ausentes e ainda deixa de seguir exatamente o formato solicitado para extração de campos.",CORRETA ,"Os quatro campos do e-mail (nome, número do pedido, problema e urgência) foram extraídos corretamente. Como nenhum campo está ausente, não se deve exigir null. A reprovação automática desconsiderou esse fato. Adequada."
+Sempre médio,M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","{
+  ""nome"": ""Ricardo Lima"",
+  ""pedido"": ""7712"",
+  ""problema"": ""A nota fiscal saiu com o endereço antigo"",
+  ""urgencia"": ""Preciso da correção ainda hoje porque o caminhão sai às 16h""
+}",0,"INADEQUADA
+MOTIVO: O campo pedido foi preenchido corretamente, mas a resposta não traz o campo solicitado ""urgência"" como nome do campo; usou ""urgencia"" sem acento, e o critério pede os campos exatamente como nome, pedido, problema e urgência.","O campo pedido foi preenchido corretamente, mas a resposta não traz o campo solicitado ""urgência"" como nome do campo; usou ""urgencia"" sem acento, e o critério pede os campos exatamente como nome, pedido, problema e urgência.",CORRETA ,"O JSON registra corretamente nome, pedido, problema e urgência. A chave urgencia sem acento não viola um esquema de chaves explicitamente exigido; nenhum campo faltava para ser null. Adequada."
+Sempre grande,M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","{
+  ""nome"": ""Ricardo Lima"",
+  ""pedido"": ""7712"",
+  ""problema"": ""A nota fiscal saiu com o endereço antigo"",
+  ""urgencia"": ""ainda hoje, porque o caminhão sai às 16h""
+}",0,"INADEQUADA
+MOTIVO: O campo solicitado é ""urgência"", mas a resposta trouxe ""urgencia"" sem acento. Além disso, não usou null para campos ausentes, embora todos os campos tenham aparecido.","O campo solicitado é ""urgência"", mas a resposta trouxe ""urgencia"" sem acento. Além disso, não usou null para campos ausentes, embora todos os campos tenham aparecido.",CORRETA ,"Os quatro valores solicitados foram extraídos corretamente em formato estruturado. Não há campo ausente, logo não era necessário preencher null; eventual ausência de acento na chave não modifica a informação extraída. Adequada."
+Roteamento,M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","nome: Ricardo Lima  
+pedido: 7712  
+problema: A nota fiscal saiu com o endereço antigo.  
+urgência: ainda hoje (caminhão sai às 16h)",0,"INADEQUADA
+MOTIVO: O campo solicitado era “urgência”, mas a resposta também adiciona informação extra em vez de apenas preencher os campos; além disso, não segue explicitamente a regra de usar null para campos ausentes.","O campo solicitado era “urgência”, mas a resposta também adiciona informação extra em vez de apenas preencher os campos; além disso, não segue explicitamente a regra de usar null para campos ausentes.",CORRETA ,"A resposta contempla nome, pedido, problema e urgência; mencionar a saída do caminhão às 16h traz contexto já presente no e-mail e não inventa dados. Não havia campos ausentes que exigissem null. Adequada."
+"Cascata 0,70",M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","nome: Ricardo Lima  
+pedido: 7712  
+problema: A nota fiscal saiu com o endereço antigo.  
+urgência: Ainda hoje (caminhão sai às 16h).  
+
+Se algum campo não aparecer: null",0,"INADEQUADA
+MOTIVO: O campo solicitado “urgência” foi preenchido, mas a instrução pedia os campos nome, pedido, problema e urgência em formato de campos, usando null se ausente; além disso, a resposta não indica null para nenhum campo ausente e acrescenta uma frase extra fora dos campos.","O campo solicitado “urgência” foi preenchido, mas a instrução pedia os campos nome, pedido, problema e urgência em formato de campos, usando null se ausente; além disso, a resposta não indica null para nenhum campo ausente e acrescenta uma frase extra fora dos campos.",PARCIALMENTE CORRETA,"Os quatro campos foram preenchidos corretamente, mas a resposta acrescenta uma orientação textual desnecessária sobre o uso de null. Isso não invalida a extração, porém reduz a aderência ao formato solicitado. Adequada com ressalvas."
+"Cascata 0,90",M08,medium,Preencher os campos pedidos sem inventar dados ausentes.,"Transforme o e-mail em campos: nome, pedido, problema e urgência.
+Se um campo não aparecer, use null.
+E-mail: Bom dia, aqui é o Ricardo Lima, pedido 7712. A nota fiscal
+saiu com o endereço antigo. Preciso da correção ainda hoje porque
+o caminhão sai às 16h.","{
+  ""nome"": ""Ricardo Lima"",
+  ""pedido"": ""7712"",
+  ""problema"": ""A nota fiscal saiu com o endereço antigo"",
+  ""urgencia"": ""Preciso da correção ainda hoje porque o caminhão sai às 16h""
+}",0,"INADEQUADA
+MOTIVO: O campo pedido foi preenchido corretamente, mas a resposta não traz o campo solicitado ""urgência"" como null quando ausente; além disso, a estrutura usa ""urgencia"" em vez de exatamente os campos pedidos, que incluem ""urgência"".","O campo pedido foi preenchido corretamente, mas a resposta não traz o campo solicitado ""urgência"" como null quando ausente; além disso, a estrutura usa ""urgencia"" em vez de exatamente os campos pedidos, que incluem ""urgência"".",CORRETA ,"O JSON apresenta corretamente todos os campos extraídos. O uso da chave urgencia sem acento e a ausência de null não tornam a resposta inadequada, pois o enunciado não definiu esquema rígido e nenhum dado estava ausente. Adequada."
